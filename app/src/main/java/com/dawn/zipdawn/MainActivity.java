@@ -12,6 +12,7 @@ public class MainActivity extends AppCompatActivity {
     private String compressDirName = Environment.getExternalStorageDirectory().getPath() + "/dawn_compress";//压缩文件后的文件夹名称
     private String decompressDirName = Environment.getExternalStorageDirectory().getPath() + "/dawn_decompress";//解压文件后的文件夹名称
     private String compressZipName = "dawn.zip";//压缩zip的名称
+    private String compressRarName = "dawn.rar";//压缩rar的名称
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +42,20 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     ZipUtil.ZipFolder(decompressDirName, compressDirName + File.separator + compressZipName);
                     toast("压缩完成");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
+    }
+    public void FileUnrar(View view){
+        new Thread(){
+            @Override
+            public void run() {
+                super.run();
+                try {
+                    ZipUtil.UnRarFolder(compressDirName + File.separator + compressRarName, decompressDirName);
+                    toast("解压完成");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

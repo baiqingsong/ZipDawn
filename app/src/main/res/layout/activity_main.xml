@@ -14,4 +14,9 @@
         android:text="zip"
         android:onClick="FileZip"/>
 
+    <Button
+        style="@style/CustomButton"
+        android:text="rar"
+        android:onClick="FileUnrar"/>
+
 </LinearLayout>

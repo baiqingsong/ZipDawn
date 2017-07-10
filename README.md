@@ -2,6 +2,7 @@
 
 * [解压](#解压)
 * [压缩](#压缩)
+* [rar解压](#rar解压)
 
 
 ## 解压
@@ -169,3 +170,100 @@ new Thread(){
 ```
 注：两个参数都是完整路径，并且压缩的类型不仅限于zip格式
 支持中文
+
+
+## rar解压
+ZipUtil类中UnRarFolder个方法，对rar文件进行解压
+```
+/**
+ * 解压rar文件
+ * @param zipFileString
+ * @param outPathString
+ * @return
+ */
+public static String UnRarFolder(String zipFileString, String outPathString) {
+    Log.i("UnRarFolder", "start time = " + System.currentTimeMillis() + "");
+    Log.i("UnRarFolder", "zipFileString = " + zipFileString + " outPathString = " + outPathString);
+    File srcFile = new File(zipFileString);
+    if (null == outPathString || "".equals(outPathString)) {
+        outPathString = srcFile.getParentFile().getPath();
+    }
+
+    FileOutputStream fileOut = null;
+    Archive rarfile = null;
+
+    try {
+        rarfile = new Archive(srcFile);
+        FileHeader fh = null;
+        final int total = rarfile.getFileHeaders().size();
+        for (int i = 0; i < rarfile.getFileHeaders().size(); i++) {
+            fh = rarfile.getFileHeaders().get(i);
+            String entrypath = "";
+            if (fh.isUnicode()) {//解決中文乱码
+                entrypath = fh.getFileNameW().trim();
+            } else {
+                entrypath = fh.getFileNameString().trim();
+            }
+            entrypath = entrypath.replaceAll("\\\\", "/");
+
+            File file = new File(outPathString, entrypath);
+            Log.i("UnRarFolder", "unrar entry file :" + file.getPath());
+
+            if (fh.isDirectory()) {
+                file.mkdirs();
+            } else {
+                File parent = file.getParentFile();
+                if (parent != null && !parent.exists()) {
+                    parent.mkdirs();
+                }
+                fileOut = new FileOutputStream(file);
+                rarfile.extractFile(fh, fileOut);
+                fileOut.close();
+            }
+        }
+        rarfile.close();
+
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    } finally {
+        if (fileOut != null) {
+            try {
+                fileOut.close();
+                fileOut = null;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        if (rarfile != null) {
+            try {
+                rarfile.close();
+                rarfile = null;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    Log.i("UnRarFolder", "end time = " + System.currentTimeMillis() + "");
+    return outPathString;
+}
+```
+其中第一个参数是要解压的rar文件的路径，第二个参数是解压文件后的文件夹路径
+```
+new Thread(){
+    @Override
+    public void run() {
+        super.run();
+        try {
+            ZipUtil.UnRarFolder(compressDirName + File.separator + compressRarName, decompressDirName);
+            toast("解压完成");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}.start();
+```
+注：rar解压比较麻烦，需要大量代码，项目中rar文件下的所有文件都需要。
+rar项目参考网址
+
+[https://github.com/aifeier/UnRar](https://github.com/aifeier/UnRar "参考路径")

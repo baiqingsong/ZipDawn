@@ -2,14 +2,11 @@ package com.dawn.zipdawn;
 
 import android.util.Log;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
+import com.dawn.zipdawn.rar.Archive;
+import com.dawn.zipdawn.rar.rarfile.FileHeader;
+
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 /**
  * Created by 90449 on 2017/7/10.
@@ -25,7 +22,7 @@ public class ZipUtil {
      * @throws Exception
      */
     public static void UnZipFolder(String zipFileString, String outPathString)throws Exception {
-        android.util.Log.i("XZip", "UnZipFolder(String, String)");
+        Log.i("UnZipFolder", "zipFileString = " + zipFileString + " outPathString = " + outPathString);
         java.util.zip.ZipInputStream inZip = new java.util.zip.ZipInputStream(new java.io.FileInputStream(zipFileString));
         java.util.zip.ZipEntry zipEntry;
         String szName = "";
@@ -68,7 +65,7 @@ public class ZipUtil {
      * @throws Exception
      */
     public static void ZipFolder(String srcFileString, String zipFileString)throws Exception {
-        android.util.Log.v("XZip", "ZipFolder(String, String)");
+        Log.i("ZipFolder", "srcFileString = " + srcFileString + " zipFileString = " + zipFileString);
 
         //创建Zip包
         java.util.zip.ZipOutputStream outZip = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zipFileString));
@@ -93,7 +90,7 @@ public class ZipUtil {
      * @throws Exception
      */
     private static void ZipFiles(String folderString, String fileString, java.util.zip.ZipOutputStream zipOutputSteam)throws Exception{
-        android.util.Log.v("XZip", "ZipFiles(String, String, ZipOutputStream)");
+        Log.i("ZipFiles", "folderString = " + folderString + " fileString = " + fileString);
 
         if(zipOutputSteam == null)
             return;
@@ -139,146 +136,77 @@ public class ZipUtil {
     }//end of func
 
 
-
-
     /**
-     * 解压文件
-     * @param zipFile 解压的文件
-     * @param targetDir 压缩后的文件夹
-     */
-    public static void Unzip(String zipFile, String targetDir) {
-        int BUFFER = 4096; //这里缓冲区我们使用4KB，
-        String strEntry; //保存每个zip的条目名称
-
-        try {
-            BufferedOutputStream dest = null; //缓冲输出流
-            FileInputStream fis = new FileInputStream(zipFile);
-            ZipInputStream zis = new ZipInputStream(new BufferedInputStream(fis));
-            ZipEntry entry; //每个zip条目的实例
-
-            while ((entry = zis.getNextEntry()) != null) {
-
-
-                try {
-                    Log.i("Unzip: ","="+ entry);
-                    int count;
-                    byte data[] = new byte[BUFFER];
-                    strEntry = entry.getName();
-
-
-                    File entryFile = new File(targetDir + strEntry);
-                    File entryDir = new File(entryFile.getParent());
-                    if (!entryDir.exists()) {
-                        entryDir.mkdirs();
-                    }
-
-
-                    FileOutputStream fos = new FileOutputStream(entryFile);
-                    dest = new BufferedOutputStream(fos, BUFFER);
-                    while ((count = zis.read(data, 0, BUFFER)) != -1) {
-                        dest.write(data, 0, count);
-                    }
-                    dest.flush();
-                    dest.close();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-            zis.close();
-        } catch (Exception cwj) {
-            cwj.printStackTrace();
-        }
-    }
-
-    /**
-     * 解压单文件压缩包到当前文件夹，并且给解压出的文件重命名
-     * @param zipPath
-     * @param name
-     * @throws IOException
-     */
-    public static void unzipSingleFileHereWithFileName(String zipPath, String name) throws IOException {
-        File zipFile = new File(zipPath);
-        File unzipFile = new File(zipFile.getParent() + "/" + name);
-        ZipInputStream zipInStream = null;
-        FileOutputStream unzipOutStream = null;
-        try {
-            zipInStream = new ZipInputStream(new FileInputStream(zipFile));
-            ZipEntry zipEntry = zipInStream.getNextEntry();
-            if (!zipEntry.isDirectory()) {
-                unzipOutStream = new FileOutputStream(unzipFile);
-                byte[] buf = new byte[4096];
-                int len = -1;
-                while((len = zipInStream.read(buf)) != -1){
-                    unzipOutStream.write(buf, 0, len);
-                }
-            }
-        } finally {
-            if(unzipOutStream != null){
-                unzipOutStream.close();
-            }
-
-
-            if (zipInStream != null) {
-                zipInStream.close();
-            }
-        }
-    }
-    /**
-     * 取得压缩包中的 文件列表(文件夹,文件自选)
-     * @param zipFileString     压缩包名字
-     * @param bContainFolder    是否包括 文件夹
-     * @param bContainFile      是否包括 文件
+     * 解压rar文件
+     * @param zipFileString
+     * @param outPathString
      * @return
-     * @throws Exception
      */
-    public static java.util.List<java.io.File> GetFileList(String zipFileString, boolean bContainFolder, boolean bContainFile)throws Exception {
+    public static String UnRarFolder(String zipFileString, String outPathString) {
+        Log.i("UnRarFolder", "start time = " + System.currentTimeMillis() + "");
+        Log.i("UnRarFolder", "zipFileString = " + zipFileString + " outPathString = " + outPathString);
+        File srcFile = new File(zipFileString);
+        if (null == outPathString || "".equals(outPathString)) {
+            outPathString = srcFile.getParentFile().getPath();
+        }
 
-        android.util.Log.v("XZip", "GetFileList(String)");
+        FileOutputStream fileOut = null;
+        Archive rarfile = null;
 
-        java.util.List<java.io.File> fileList = new java.util.ArrayList<java.io.File>();
-        java.util.zip.ZipInputStream inZip = new java.util.zip.ZipInputStream(new java.io.FileInputStream(zipFileString));
-        java.util.zip.ZipEntry zipEntry;
-        String szName = "";
-
-        while ((zipEntry = inZip.getNextEntry()) != null) {
-            szName = zipEntry.getName();
-
-            if (zipEntry.isDirectory()) {
-
-                // get the folder name of the widget
-                szName = szName.substring(0, szName.length() - 1);
-                java.io.File folder = new java.io.File(szName);
-                if (bContainFolder) {
-                    fileList.add(folder);
+        try {
+            rarfile = new Archive(srcFile);
+            FileHeader fh = null;
+            final int total = rarfile.getFileHeaders().size();
+            for (int i = 0; i < rarfile.getFileHeaders().size(); i++) {
+                fh = rarfile.getFileHeaders().get(i);
+                String entrypath = "";
+                if (fh.isUnicode()) {//解決中文乱码
+                    entrypath = fh.getFileNameW().trim();
+                } else {
+                    entrypath = fh.getFileNameString().trim();
                 }
+                entrypath = entrypath.replaceAll("\\\\", "/");
 
-            } else {
-                java.io.File file = new java.io.File(szName);
-                if (bContainFile) {
-                    fileList.add(file);
+                File file = new File(outPathString, entrypath);
+                Log.i("UnRarFolder", "unrar entry file :" + file.getPath());
+
+                if (fh.isDirectory()) {
+                    file.mkdirs();
+                } else {
+                    File parent = file.getParentFile();
+                    if (parent != null && !parent.exists()) {
+                        parent.mkdirs();
+                    }
+                    fileOut = new FileOutputStream(file);
+                    rarfile.extractFile(fh, fileOut);
+                    fileOut.close();
                 }
             }
-        }//end of while
+            rarfile.close();
 
-        inZip.close();
 
-        return fileList;
-    }
-
-    /**
-     * 返回压缩包中的文件InputStream
-     * @param zipFileString     压缩文件的名字
-     * @param fileString    解压文件的名字
-     * @return InputStream
-     * @throws Exception
-     */
-    public static java.io.InputStream UpZip(String zipFileString, String fileString)throws Exception {
-        android.util.Log.v("XZip", "UpZip(String, String)");
-        java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile(zipFileString);
-        java.util.zip.ZipEntry zipEntry = zipFile.getEntry(fileString);
-
-        return zipFile.getInputStream(zipEntry);
-
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (fileOut != null) {
+                try {
+                    fileOut.close();
+                    fileOut = null;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            if (rarfile != null) {
+                try {
+                    rarfile.close();
+                    rarfile = null;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        Log.i("UnRarFolder", "end time = " + System.currentTimeMillis() + "");
+        return outPathString;
     }
 
 }
